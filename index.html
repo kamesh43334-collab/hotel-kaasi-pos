@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+    <!-- iOS Web App Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Hotel Kaasi POS">
+    <meta name="format-detection" content="telephone=no">
+    <title>HOTEL KAASI - POS & Management System</title>
+    <!-- Tailwind CSS for sleek, modern UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        kaasi: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        
+        /* Native iOS feel adjustments */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            touch-action: manipulation;
+            /* iOS Safe Area Padding Support */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+        }
+
+        /* Momentum scrolling on iOS Safari */
+        .overflow-y-auto, .overflow-x-auto, #cart-items-container {
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Prevent Auto-Zoom on iOS Safari when focusing inputs */
+        @media screen and (-webkit-min-device-pixel-ratio: 0) {
+            select, textarea, input[type="text"], input[type="number"], input[type="password"] {
+                font-size: 16px !important;
+            }
+        }
+
+        /* Utility classes for safe areas */
+        .pt-safe { padding-top: max(0.75rem, env(safe-area-inset-top)); }
+        .pb-safe { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* PRINT STYLES: Safari on iPhone/iPad and AirPrint */
+        #printable-container { display: none; }
+        @media print {
+            @page { margin: 8mm; }
+            body * { visibility: hidden !important; }
+            #printable-container, #printable-container * { visibility: visible !important; }
+            #printable-container {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                color: #000 !important;
+                background: #fff !important;
+                font-family: -apple-system, BlinkMacSystemFont, monospace, sans-serif;
+            }
+            .no-print { display: none !important; }
+            tr, img { break-inside: avoid; page-break-inside: avoid; }
+        }
+
+        /* Better touch targets and compact layout on iPhone */
+        button, select, input { touch-action: manipulation; }
+        button { -webkit-appearance: none; }
+        input, select, textarea { border-radius: 0.75rem; }
+        @supports (-webkit-touch-callout: none) {
+            body { min-height: -webkit-fill-available; }
+            .sticky { position: -webkit-sticky; position: sticky; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col select-none">
+
+    <!-- TOP HEADER -->
+    <header class="bg-gradient-to-r from-kaasi-900 via-kaasi-800 to-kaasi-900 text-white shadow-lg sticky top-0 z-50 pt-safe">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="bg-amber-500 text-kaasi-900 w-10 h-10 rounded-xl flex items-center justify-center font-black text-xl shadow-inner">
+                    HK
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-wider text-amber-400">HOTEL KAASI</h1>
+                    <p class="text-xs text-orange-200 font-medium">Digital POS & Sales Analytics System</p>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <nav class="flex bg-kaasi-900/60 p-1.5 rounded-xl border border-orange-500/20 shadow-inner">
+                <button id="nav-pos" onclick="switchView('pos')" 
+                    class="px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 bg-amber-500 text-kaasi-900 shadow">
+                    <i class="fa-solid fa-utensils"></i> Point of Sale
+                </button>
+                <button id="nav-summary" onclick="switchView('summary')" 
+                    class="px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 text-orange-100 hover:text-white hover:bg-orange-800/50">
+                    <i class="fa-solid fa-chart-line"></i> Sales & Item Reports
+                </button>
+                <button id="nav-menu" onclick="switchView('menu')" 
+                    class="px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 text-orange-100 hover:text-white hover:bg-orange-800/50">
+                    <i class="fa-solid fa-pen-to-square"></i> Edit Menu
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- MAIN APP CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 pb-28">
+
+        <!-- ========================================== -->
+        <!-- VIEW 1: POINT OF SALE (POS & PAYMENT METHODS) -->
+        <!-- ========================================== -->
+        <section id="view-pos" class="space-y-6">
+            <!-- Meal Selector Tabs -->
+            <div class="flex items-center justify-between bg-white p-2 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex gap-2 w-full">
+                    <button id="meal-tab-Breakfast" onclick="setMealCategory('Breakfast')"
+                        class="flex-1 py-3 px-4 rounded-xl font-bold text-base flex justify-center items-center gap-2 transition-all bg-kaasi-600 text-white shadow-md">
+                        <i class="fa-solid fa-sun text-amber-300"></i> Breakfast
+                    </button>
+                    <button id="meal-tab-Lunch" onclick="setMealCategory('Lunch')"
+                        class="flex-1 py-3 px-4 rounded-xl font-bold text-base flex justify-center items-center gap-2 transition-all text-slate-600 hover:bg-slate-100">
+                        <i class="fa-solid fa-cloud-sun text-amber-500"></i> Lunch
+                    </button>
+                    <button id="meal-tab-Dinner" onclick="setMealCategory('Dinner')"
+                        class="flex-1 py-3 px-4 rounded-xl font-bold text-base flex justify-center items-center gap-2 transition-all text-slate-600 hover:bg-slate-100">
+                        <i class="fa-solid fa-moon text-indigo-500"></i> Dinner
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left 7 Cols: Menu Grid -->
+                <div class="lg:col-span-7 space-y-4">
+                    <div class="flex justify-between items-center px-1">
+                        <h2 class="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+                            <span id="current-category-title">Breakfast</span> Items
+                        </h2>
+                        <span id="items-count-badge" class="bg-orange-100 text-orange-800 font-bold text-xs px-2.5 py-1 rounded-full">
+                            0 items available
+                        </span>
+                    </div>
+
+                    <div id="pos-menu-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Items rendered via JS -->
+                    </div>
+                </div>
+
+                <!-- Right 5 Cols: Cart & Payment Section -->
+                <div class="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                            <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-receipt text-kaasi-600"></i> Current Order
+                            </h3>
+                            <button onclick="clearCart()" class="text-xs text-rose-500 hover:text-rose-700 font-bold flex items-center gap-1 bg-rose-50 px-2.5 py-1 rounded-lg transition">
+                                <i class="fa-solid fa-trash-can"></i> Clear
+                            </button>
+                        </div>
+
+                        <!-- Active Items List -->
+                        <div id="cart-items-container" class="max-h-52 overflow-y-auto my-3 space-y-2 pr-1">
+                            <!-- Items injected via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Total & Payment Method Calculator -->
+                    <div class="pt-3 border-t border-slate-100 space-y-3 bg-slate-50 p-4 rounded-xl">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-base text-slate-700">Bill Total:</span>
+                            <span class="font-black text-2xl text-slate-900">₹<span id="cart-grand-total">0</span></span>
+                        </div>
+
+                        <!-- Payment Method Selector Toggle -->
+                        <div class="space-y-2 pt-2 border-t border-slate-200/80">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider block">Select Payment Method:</label>
+                            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-200/70 rounded-xl">
+                                <button id="pay-mode-cash" onclick="setPaymentMode('CASH')" 
+                                    class="py-2.5 rounded-lg text-xs font-black flex items-center justify-center gap-2 transition bg-emerald-600 text-white shadow">
+                                    <i class="fa-solid fa-money-bill-wave"></i> CASH
+                                </button>
+                                <button id="pay-mode-upi" onclick="setPaymentMode('UPI')" 
+                                    class="py-2.5 rounded-lg text-xs font-black flex items-center justify-center gap-2 transition text-slate-700 hover:bg-white/60">
+                                    <i class="fa-solid fa-qrcode"></i> UPI / QR
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- CASH MODE INPUTS -->
+                        <div id="cash-payment-section" class="space-y-2 pt-1">
+                            <div class="flex items-center justify-between gap-2">
+                                <label class="text-xs font-bold text-slate-600 uppercase">Cash Received (₹):</label>
+                                <input type="number" id="cash-received-input" oninput="calculateCashBalance()" placeholder="0" min="0" inputmode="numeric" pattern="[0-9]*"
+                                    class="w-32 p-2 text-right font-black text-lg border-2 border-slate-300 focus:border-kaasi-600 rounded-lg outline-none bg-white">
+                            </div>
+
+                            <div class="flex items-center justify-between text-sm py-1">
+                                <span class="font-bold text-slate-600">Balance / Change to Return:</span>
+                                <span id="cash-balance-display" class="font-black text-lg text-slate-700">₹0</span>
+                            </div>
+                        </div>
+
+                        <!-- UPI / QR MODE SECTION -->
+                        <div id="upi-payment-section" class="hidden space-y-3 pt-1 text-center">
+                            <div class="bg-white p-3 rounded-xl border border-indigo-100 shadow-sm flex flex-col items-center">
+                                <span class="text-xs font-bold text-indigo-700 uppercase mb-1 flex items-center gap-1">
+                                    <i class="fa-solid fa-bolt"></i> Scan QR code to pay ₹<span id="upi-qr-amount">0</span>
+                                </span>
+                                
+                                <!-- Dynamic QR Code Display -->
+                                <div class="relative p-2 bg-white rounded-xl border border-slate-200 my-1 shadow-inner">
+                                    <img id="upi-qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=BHARATPE2Q0Y0F8H8G49439@unitype%26pn=PRASANTH%20E" alt="BharatPe UPI QR Code" class="w-36 h-36 rounded-lg object-contain">
+                                </div>
+                                <div class="text-[11px] font-bold text-slate-700 mt-1">
+                                    Payee: <span class="font-extrabold text-indigo-900">PRASANTH E</span>
+                                </div>
+                                <div class="text-[11px] font-bold text-slate-500 mt-0.5">
+                                    UPI ID: <span class="text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 font-mono text-[10px]">BHARATPE2Q0Y0F8H8G49439@unitype</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-slate-400 text-xs mt-2">
+                                    <i class="fa-brands fa-google-pay text-base text-indigo-600"></i>
+                                    <i class="fa-solid fa-mobile-screen-button text-xs text-sky-600"></i> PhonePe / Paytm / GPay / BharatPe
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onclick="completeOrder()" 
+                            class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 flex justify-center items-center gap-2 text-base transition transform active:scale-98">
+                            <i class="fa-solid fa-circle-check"></i> Complete & Save Order
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: SALES REPORTS & ITEM BREAKDOWNS -->
+        <!-- ========================================== -->
+        <section id="view-summary" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-800">Sales Analytics & Payment Reports</h2>
+                    <p class="text-xs text-slate-500">Track meal performance, payment modes & print receipts</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="exportToExcel()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-2 transition shadow-md">
+                        <i class="fa-solid fa-file-excel text-base"></i> Download Excel (.csv)
+                    </button>
+                    <button onclick="printAllSalesLog()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs flex items-center gap-2 transition shadow-md">
+                        <i class="fa-solid fa-print text-base"></i> Print All Sales Log
+                    </button>
+                    <button onclick="clearSalesLog()" class="px-4 py-2.5 bg-rose-100 text-rose-700 hover:bg-rose-200 font-bold rounded-xl text-xs transition">
+                        Clear History
+                    </button>
+                </div>
+            </div>
+
+            <!-- Total Stats Cards & Payment Method Breakdown -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Revenue</p>
+                        <h3 class="text-2xl font-black text-slate-900 mt-1">₹<span id="summary-total-revenue">0</span></h3>
+                    </div>
+                    <div class="w-10 h-10 bg-slate-100 text-slate-700 rounded-xl flex items-center justify-center font-bold">₹</div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Cash Revenue</p>
+                        <h3 class="text-2xl font-black text-emerald-600 mt-1">₹<span id="summary-cash-revenue">0</span></h3>
+                    </div>
+                    <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-money-bill-wave"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-indigo-600 uppercase tracking-wider">UPI Revenue</p>
+                        <h3 class="text-2xl font-black text-indigo-600 mt-1">₹<span id="summary-upi-revenue">0</span></h3>
+                    </div>
+                    <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-qrcode"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Orders</p>
+                        <h3 class="text-2xl font-black text-kaasi-600 mt-1"><span id="summary-total-orders">0</span></h3>
+                    </div>
+                    <div class="w-10 h-10 bg-orange-100 text-kaasi-600 rounded-xl flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-bag-shopping"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ITEMIZED MEAL SALE DETAILS -->
+            <div class="space-y-4">
+                <h3 class="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-kaasi-600"></i> Itemized Meal Sales Breakdown
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Breakfast Sales -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+                        <div>
+                            <div class="bg-amber-500 text-white p-4 flex justify-between items-center">
+                                <h4 class="font-extrabold text-base flex items-center gap-2"><i class="fa-solid fa-sun"></i> Breakfast Details</h4>
+                                <span class="bg-amber-600 text-xs px-2.5 py-1 rounded-full font-bold">₹<span id="bf-total-rev">0</span></span>
+                            </div>
+                            <div class="p-4 overflow-y-auto max-h-60">
+                                <table class="w-full text-sm text-left">
+                                    <thead>
+                                        <tr class="text-xs text-slate-400 border-b border-slate-100 uppercase">
+                                            <th class="pb-2">Item Name</th>
+                                            <th class="pb-2 text-center">Qty Sold</th>
+                                            <th class="pb-2 text-right">Total (₹)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="bf-itemized-tbody" class="divide-y divide-slate-100 text-slate-700">
+                                        <!-- Injected by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lunch Sales -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+                        <div>
+                            <div class="bg-kaasi-600 text-white p-4 flex justify-between items-center">
+                                <h4 class="font-extrabold text-base flex items-center gap-2"><i class="fa-solid fa-cloud-sun"></i> Lunch Details</h4>
+                                <span class="bg-kaasi-700 text-xs px-2.5 py-1 rounded-full font-bold">₹<span id="lunch-total-rev">0</span></span>
+                            </div>
+                            <div class="p-4 overflow-y-auto max-h-60">
+                                <table class="w-full text-sm text-left">
+                                    <thead>
+                                        <tr class="text-xs text-slate-400 border-b border-slate-100 uppercase">
+                                            <th class="pb-2">Item Name</th>
+                                            <th class="pb-2 text-center">Qty Sold</th>
+                                            <th class="pb-2 text-right">Total (₹)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="lunch-itemized-tbody" class="divide-y divide-slate-100 text-slate-700">
+                                        <!-- Injected by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dinner Sales -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+                        <div>
+                            <div class="bg-indigo-600 text-white p-4 flex justify-between items-center">
+                                <h4 class="font-extrabold text-base flex items-center gap-2"><i class="fa-solid fa-moon"></i> Dinner Details</h4>
+                                <span class="bg-indigo-700 text-xs px-2.5 py-1 rounded-full font-bold">₹<span id="dinner-total-rev">0</span></span>
+                            </div>
+                            <div class="p-4 overflow-y-auto max-h-60">
+                                <table class="w-full text-sm text-left">
+                                    <thead>
+                                        <tr class="text-xs text-slate-400 border-b border-slate-100 uppercase">
+                                            <th class="pb-2">Item Name</th>
+                                            <th class="pb-2 text-center">Qty Sold</th>
+                                            <th class="pb-2 text-right">Total (₹)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dinner-itemized-tbody" class="divide-y divide-slate-100 text-slate-700">
+                                        <!-- Injected by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Bills Log Table with Payment Mode Badge & Action Print Buttons -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-slate-600"></i> Detailed Bills Log & Payment Records
+                    </h3>
+                    <button onclick="printAllSalesLog()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow transition">
+                        <i class="fa-solid fa-print"></i> Print All Records
+                    </button>
+                </div>
+                <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                    <table class="w-full text-left border-collapse min-w-[600px]">
+                        <thead class="sticky top-0 bg-slate-100 text-slate-500 text-xs font-extrabold uppercase tracking-wider z-10">
+                            <tr>
+                                <th class="py-3 px-4">Order ID & Date</th>
+                                <th class="py-3 px-4">Meal</th>
+                                <th class="py-3 px-4">Payment</th>
+                                <th class="py-3 px-4">Items Ordered</th>
+                                <th class="py-3 px-4 text-right">Paid</th>
+                                <th class="py-3 px-4 text-right">Change</th>
+                                <th class="py-3 px-4 text-right">Bill Total</th>
+                                <th class="py-3 px-4 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sales-log-table-body" class="divide-y divide-slate-100 text-sm font-medium text-slate-700">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- VIEW 3: EDITABLE MENU MANAGEMENT -->
+        <!-- ========================================== -->
+        <section id="view-menu" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Add / Edit Form -->
+                <div class="lg:col-span-5 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-fit">
+                    <h3 class="text-lg font-black text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-pen-to-square text-kaasi-600"></i> <span id="form-title">Add New Menu Item</span>
+                    </h3>
+                    
+                    <form id="menu-item-form" onsubmit="handleSaveMenuItem(event)" class="space-y-4">
+                        <input type="hidden" id="edit-item-id" value="">
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Meal Category</label>
+                            <select id="form-category" required class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-kaasi-500 focus:outline-none bg-slate-50 font-semibold">
+                                <option value="Breakfast">Breakfast</option>
+                                <option value="Lunch">Lunch</option>
+                                <option value="Dinner">Dinner</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Item Name</label>
+                            <input type="text" id="form-name" required placeholder="e.g. Dosa"
+                                class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-kaasi-500 focus:outline-none font-semibold">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Price (₹)</label>
+                            <input type="number" id="form-price" min="0" step="1" required placeholder="e.g. 60" inputmode="numeric" pattern="[0-9]*"
+                                class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-kaasi-500 focus:outline-none font-semibold">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Description / Accompaniments</label>
+                            <input type="text" id="form-desc" placeholder="e.g. Served with Sambar & Chutney"
+                                class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-kaasi-500 focus:outline-none font-medium">
+                        </div>
+
+                        <div class="flex gap-2 pt-2">
+                            <button type="submit" 
+                                class="flex-1 py-3 bg-kaasi-600 hover:bg-kaasi-700 text-white font-bold rounded-xl shadow transition">
+                                <i class="fa-solid fa-floppy-disk"></i> Save Item
+                            </button>
+                            <button type="button" onclick="resetForm()" 
+                                class="px-4 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Menu Table -->
+                <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800">Hotel Kaasi Menu Items</h3>
+                        <button onclick="restoreDefaultMenu()" class="text-xs text-orange-600 hover:underline font-bold">
+                            Reset to Default Menu
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[500px]">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-500 text-xs font-extrabold uppercase tracking-wider border-b border-slate-200">
+                                    <th class="py-3 px-4">Meal</th>
+                                    <th class="py-3 px-4">Item Name</th>
+                                    <th class="py-3 px-4">Price</th>
+                                    <th class="py-3 px-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="menu-manager-table-body" class="divide-y divide-slate-100 text-sm font-medium text-slate-700">
+                                <!-- Menu list loaded by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FLOATING POS BOTTOM SUMMARY BAR -->
+    <div id="pos-floating-bar" class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md text-white p-4 pb-safe shadow-2xl border-t border-slate-800 z-40">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <div class="bg-emerald-500/20 text-emerald-400 p-2.5 rounded-xl text-xl font-bold">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                </div>
+                <div>
+                    <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Bill Total</span>
+                    <div class="text-2xl font-black text-emerald-400">₹<span id="floating-cart-total">0</span></div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="floating-payment-badge" class="hidden sm:inline text-xs font-bold px-3 py-1 bg-emerald-950 text-emerald-300 border border-emerald-700 rounded-full">
+                    PAY VIA: CASH
+                </span>
+                <span class="hidden sm:inline text-xs text-slate-400 font-medium"><span id="floating-cart-count">0</span> item(s)</span>
+                <button onclick="completeOrder()" class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-extrabold rounded-xl shadow-lg transition active:scale-95 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-check"></i> Complete Order
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRINT CONTAINER (Hidden in regular UI, targeted by @media print) -->
+    <div id="printable-container" class="hidden"></div>
+
+    <!-- CUSTOM MESSAGE / CONFIRM MODAL -->
+    <div id="custom-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 transform transition-all space-y-4">
+            <div class="flex items-center space-x-3">
+                <div id="modal-icon-bg" class="w-10 h-10 rounded-xl bg-orange-100 text-kaasi-600 flex items-center justify-center font-bold text-xl">
+                    <i id="modal-icon" class="fa-solid fa-circle-info"></i>
+                </div>
+                <h3 id="modal-title" class="text-lg font-black text-slate-800">Notification</h3>
+            </div>
+            <p id="modal-body" class="text-sm text-slate-600 font-medium leading-relaxed whitespace-pre-line"></p>
+            <div id="modal-actions" class="flex justify-end gap-2 pt-2">
+                <!-- Action Buttons injected dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- JS APP LOGIC -->
+    <script>
+        // Storage wrapper: prevents Safari/private-mode storage errors from crashing the POS.
+        // Normal Safari sessions continue to save menu and sales data in localStorage.
+        const memoryStorage = Object.create(null);
+        function storageGet(key) {
+            try {
+                const value = window.localStorage.getItem(key);
+                return value !== null ? value : (memoryStorage[key] ?? null);
+            } catch (error) {
+                return memoryStorage[key] ?? null;
+            }
+        }
+        function storageSet(key, value) {
+            memoryStorage[key] = String(value);
+            try { window.localStorage.setItem(key, String(value)); return true; }
+            catch (error) { return false; }
+        }
+
+        // UPI CONSTANTS
+        const UPI_ID = "BHARATPE2Q0Y0F8H8G49439@unitype";
+        const UPI_NAME = "PRASANTH E";
+
+        // DEFAULT MENU ITEMS UPDATED FROM PDF
+        const DEFAULT_MENU = [
+            // BREAKFAST ITEMS
+            { id: 'b1', meal: 'Breakfast', name: 'Idly (Per Piece)', price: 10, desc: 'Served with Sambar & Chutney' },
+            { id: 'b2', meal: 'Breakfast', name: 'Vada', price: 10, desc: 'Served with Sambar & Chutney' },
+            { id: 'b3', meal: 'Breakfast', name: 'Plain Dosa', price: 30, desc: 'Served with Sambar & Chutney' },
+            { id: 'b4', meal: 'Breakfast', name: 'Egg Dosa', price: 50, desc: 'Served with Sambar & Chutney' },
+            { id: 'b5', meal: 'Breakfast', name: 'Onion Dosa', price: 50, desc: 'Served with Sambar & Chutney' },
+
+            // LUNCH ITEMS
+            { id: 'l1', meal: 'Lunch', name: 'Biryani (Full)', price: 130, desc: 'Aromatic spiced rice with succulent meat' },
+            { id: 'l2', meal: 'Lunch', name: 'Biryani (Half)', price: 80, desc: 'Aromatic spiced rice with succulent meat' },
+            { id: 'l3', meal: 'Lunch', name: 'Kuska (Full)', price: 75, desc: 'Flavourful seasoned plain biryani rice' },
+            { id: 'l4', meal: 'Lunch', name: 'Kuska (Half)', price: 45, desc: 'Flavourful seasoned plain biryani rice' },
+            { id: 'l5', meal: 'Lunch', name: 'Plain Parotta', price: 25, desc: 'Hot & flaky parotta' },
+            { id: 'l6', meal: 'Lunch', name: 'Bun Parotta', price: 30, desc: 'Puffy, layered & golden crust' },
+            { id: 'l7', meal: 'Lunch', name: 'Egg Parotta', price: 60, desc: 'Hot & flaky egg parotta' },
+            { id: 'l8', meal: 'Lunch', name: 'Kothu Parotta', price: 120, desc: 'Shredded parotta tossed with spices' },
+            { id: 'l9', meal: 'Lunch', name: 'Chicken Murtabak', price: 150, desc: 'Stuffed pan-fried minced chicken delicacy' },
+            { id: 'l10', meal: 'Lunch', name: 'Chicken 65', price: 60, desc: 'Crisp, spicy fried chicken bites' },
+            { id: 'l11', meal: 'Lunch', name: 'Mint Chicken', price: 80, desc: 'Tender chicken infused with fresh mint' },
+            { id: 'l12', meal: 'Lunch', name: 'Chicken Gravy', price: 80, desc: 'Rich spicy curry, ideal with parotta' },
+            { id: 'l13', meal: 'Lunch', name: 'Egg Omelette', price: 20, desc: 'Fresh egg omelette' },
+            { id: 'l14', meal: 'Lunch', name: 'Kalaki (Single Egg)', price: 20, desc: 'Soft-cooked seasoned egg' },
+            { id: 'l15', meal: 'Lunch', name: 'Kalaki (Double Egg)', price: 20, desc: 'Soft-cooked double egg' },
+            { id: 'l16', meal: 'Lunch', name: 'Half Boil', price: 20, desc: 'Sunny side up half-boiled egg' },
+            { id: 'l17', meal: 'Lunch', name: 'Egg Tawa Dish', price: 20, desc: 'Spiced egg on tawa' },
+            { id: 'l18', meal: 'Lunch', name: 'Chicken Fried Rice', price: 100, desc: 'Freshly prepared hot & spicy fried rice' },
+            { id: 'l19', meal: 'Lunch', name: 'Chicken Noodles', price: 90, desc: 'Wok-tossed chicken noodles' },
+            { id: 'l20', meal: 'Lunch', name: 'Egg Fried Rice', price: 70, desc: 'Wok-tossed egg fried rice' },
+            { id: 'l21', meal: 'Lunch', name: 'Egg Noodles', price: 70, desc: 'Wok-tossed egg noodles' },
+
+            // DINNER ITEMS
+            { id: 'd1', meal: 'Dinner', name: 'Biryani (Full)', price: 130, desc: 'Aromatic spiced rice with succulent meat' },
+            { id: 'd2', meal: 'Dinner', name: 'Biryani (Half)', price: 80, desc: 'Aromatic spiced rice with succulent meat' },
+            { id: 'd3', meal: 'Dinner', name: 'Kuska (Full)', price: 75, desc: 'Flavourful seasoned plain biryani rice' },
+            { id: 'd4', meal: 'Dinner', name: 'Kuska (Half)', price: 45, desc: 'Flavourful seasoned plain biryani rice' },
+            { id: 'd5', meal: 'Dinner', name: 'Plain Parotta', price: 25, desc: 'Hot & flaky parotta' },
+            { id: 'd6', meal: 'Dinner', name: 'Bun Parotta', price: 30, desc: 'Puffy, layered & golden crust' },
+            { id: 'd7', meal: 'Dinner', name: 'Egg Parotta', price: 60, desc: 'Hot & flaky egg parotta' },
+            { id: 'd8', meal: 'Dinner', name: 'Kothu Parotta', price: 120, desc: 'Shredded parotta tossed with spices' },
+            { id: 'd9', meal: 'Dinner', name: 'Chicken Murtabak', price: 150, desc: 'Stuffed pan-fried minced chicken delicacy' },
+            { id: 'd10', meal: 'Dinner', name: 'Chicken 65', price: 60, desc: 'Crisp, spicy fried chicken bites' },
+            { id: 'd11', meal: 'Dinner', name: 'Mint Chicken', price: 80, desc: 'Tender chicken infused with fresh mint' },
+            { id: 'd12', meal: 'Dinner', name: 'Chicken Gravy', price: 80, desc: 'Rich spicy curry, ideal with parotta' },
+            { id: 'd13', meal: 'Dinner', name: 'Egg Omelette', price: 20, desc: 'Fresh egg omelette' },
+            { id: 'd14', meal: 'Dinner', name: 'Kalaki (Single Egg)', price: 20, desc: 'Soft-cooked seasoned egg' },
+            { id: 'd15', meal: 'Dinner', name: 'Kalaki (Double Egg)', price: 40, desc: 'Soft-cooked double egg' },
+            { id: 'd16', meal: 'Dinner', name: 'Half Boil', price: 20, desc: 'Sunny side up half-boiled egg' },
+            { id: 'd17', meal: 'Dinner', name: 'Egg Tawa Dish', price: 20, desc: 'Spiced egg on tawa' },
+            { id: 'd18', meal: 'Dinner', name: 'Chicken Fried Rice', price: 100, desc: 'Freshly prepared hot & spicy fried rice' },
+            { id: 'd19', meal: 'Dinner', name: 'Chicken Noodles', price: 90, desc: 'Wok-tossed chicken noodles' },
+            { id: 'd20', meal: 'Dinner', name: 'Egg Fried Rice', price: 70, desc: 'Wok-tossed egg fried rice' },
+            { id: 'd21', meal: 'Dinner', name: 'Egg Noodles', price: 70, desc: 'Wok-tossed egg noodles' },
+            { id: 'd22', meal: 'Dinner', name: 'Plain Dosa', price: 30, desc: 'Served with hot chutney & sambar' },
+            { id: 'd23', meal: 'Dinner', name: 'Egg Dosa', price: 50, desc: 'Served with hot chutney & sambar' },
+            { id: 'd24', meal: 'Dinner', name: 'Onion Dosa', price: 50, desc: 'Served with hot chutney & sambar' },
+            { id: 'd25', meal: 'Dinner', name: 'Idly (Per Piece)', price: 10, desc: 'Served with hot chutney & sambar' }
+        ];
+
+        // Safely retrieve stored menu
+        let savedMenu;
+        try {
+            savedMenu = JSON.parse(storageGet('kaasi_menu_v2'));
+        } catch (e) {
+            savedMenu = null;
+        }
+
+        if (!savedMenu) {
+            storageSet('kaasi_menu_v2', JSON.stringify(DEFAULT_MENU));
+            savedMenu = DEFAULT_MENU;
+        }
+
+        let menuItems = savedMenu;
+        let salesLog = [];
+        try {
+            salesLog = JSON.parse(storageGet('kaasi_sales')) || [];
+        } catch(e) {
+            salesLog = [];
+        }
+
+        let activeCart = [];
+        let activeMealCategory = 'Lunch';
+        let selectedPaymentMode = 'CASH';
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderPOSMenu();
+            renderCart();
+            renderSummaryView();
+            renderMenuManagerTable();
+        });
+
+        // UI NAVIGATION
+        function switchView(viewName) {
+            document.getElementById('view-pos').classList.add('hidden');
+            document.getElementById('view-summary').classList.add('hidden');
+            document.getElementById('view-menu').classList.add('hidden');
+
+            document.getElementById('nav-pos').className = "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 text-orange-100 hover:text-white hover:bg-orange-800/50";
+            document.getElementById('nav-summary').className = "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 text-orange-100 hover:text-white hover:bg-orange-800/50";
+            document.getElementById('nav-menu').className = "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 text-orange-100 hover:text-white hover:bg-orange-800/50";
+
+            const floatingBar = document.getElementById('pos-floating-bar');
+
+            if (viewName === 'pos') {
+                document.getElementById('view-pos').classList.remove('hidden');
+                document.getElementById('nav-pos').className = "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 bg-amber-500 text-kaasi-900 shadow";
+                floatingBar.classList.remove('hidden');
+                renderPOSMenu();
+            } else if (viewName === 'summary') {
+                document.getElementById('view-summary').classList.remove('hidden');
+                document.getElementById('nav-summary').className = "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 bg-amber-500 text-kaasi-900 shadow";
+                floatingBar.classList.add('hidden');
+                renderSummaryView();
+            } else if (viewName === 'menu') {
+                document.getElementById('view-menu').classList.remove('hidden');
+                document.getElementById('nav-menu').className = "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 bg-amber-500 text-kaasi-900 shadow";
+                floatingBar.classList.add('hidden');
+                renderMenuManagerTable();
+            }
+        }
+
+        // PAYMENT METHOD SWITCHER LOGIC
+        function setPaymentMode(mode) {
+            selectedPaymentMode = mode;
+            const cashBtn = document.getElementById('pay-mode-cash');
+            const upiBtn = document.getElementById('pay-mode-upi');
+            const cashSec = document.getElementById('cash-payment-section');
+            const upiSec = document.getElementById('upi-payment-section');
+            const floatBadge = document.getElementById('floating-payment-badge');
+
+            if (mode === 'CASH') {
+                cashBtn.className = "py-2.5 rounded-lg text-xs font-black flex items-center justify-center gap-2 transition bg-emerald-600 text-white shadow";
+                upiBtn.className = "py-2.5 rounded-lg text-xs font-black flex items-center justify-center gap-2 transition text-slate-700 hover:bg-white/60";
+                cashSec.classList.remove('hidden');
+                upiSec.classList.add('hidden');
+                floatBadge.className = "hidden sm:inline text-xs font-bold px-3 py-1 bg-emerald-950 text-emerald-300 border border-emerald-700 rounded-full";
+                floatBadge.innerText = "PAY VIA: CASH";
+            } else {
+                upiBtn.className = "py-2.5 rounded-lg text-xs font-black flex items-center justify-center gap-2 transition bg-indigo-600 text-white shadow";
+                cashBtn.className = "py-2.5 rounded-lg text-xs font-black flex items-center justify-center gap-2 transition text-slate-700 hover:bg-white/60";
+                cashSec.classList.add('hidden');
+                upiSec.classList.remove('hidden');
+                floatBadge.className = "hidden sm:inline text-xs font-bold px-3 py-1 bg-indigo-950 text-indigo-300 border border-indigo-700 rounded-full";
+                floatBadge.innerText = "PAY VIA: UPI QR";
+            }
+
+            calculateCashBalance();
+        }
+
+        function setMealCategory(category) {
+            activeMealCategory = category;
+            ['Breakfast', 'Lunch', 'Dinner'].forEach(cat => {
+                const btn = document.getElementById(`meal-tab-${cat}`);
+                if (cat === category) {
+                    btn.className = "flex-1 py-3 px-4 rounded-xl font-bold text-base flex justify-center items-center gap-2 transition-all bg-kaasi-600 text-white shadow-md";
+                } else {
+                    btn.className = "flex-1 py-3 px-4 rounded-xl font-bold text-base flex justify-center items-center gap-2 transition-all text-slate-600 hover:bg-slate-100";
+                }
+            });
+            document.getElementById('current-category-title').innerText = category;
+            renderPOSMenu();
+        }
+
+        function renderPOSMenu() {
+            const grid = document.getElementById('pos-menu-grid');
+            grid.innerHTML = '';
+            const filteredItems = menuItems.filter(item => item.meal === activeMealCategory);
+            document.getElementById('items-count-badge').innerText = `${filteredItems.length} items available`;
+
+            filteredItems.forEach(item => {
+                const cartMatch = activeCart.find(c => c.id === item.id);
+                const currentQty = cartMatch ? cartMatch.qty : 0;
+
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-3";
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-bold text-base text-slate-800">${item.name}</h3>
+                            <span class="font-extrabold text-emerald-600 text-base">₹${item.price}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">${item.desc || 'Fresh dish'}</p>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                        <span class="text-xs font-bold text-slate-400">${item.meal}</span>
+                        ${currentQty > 0 ? `
+                            <div class="flex items-center bg-orange-100 rounded-xl p-1 text-kaasi-800 font-bold">
+                                <button onclick="updateQty('${item.id}', -1)" class="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center text-sm font-black active:scale-90 transition">-</button>
+                                <span class="px-3 text-sm">${currentQty}</span>
+                                <button onclick="updateQty('${item.id}', 1)" class="w-8 h-8 bg-kaasi-600 text-white rounded-lg shadow-sm flex items-center justify-center text-sm font-black active:scale-90 transition">+</button>
+                            </div>
+                        ` : `
+                            <button onclick="addToCart('${item.id}')" 
+                                class="px-4 py-2 bg-kaasi-600 hover:bg-kaasi-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1 active:scale-95">
+                                <i class="fa-solid fa-plus"></i> Add
+                            </button>
+                        `}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function addToCart(itemId) {
+            const item = menuItems.find(m => m.id === itemId);
+            if (!item) return;
+
+            const existing = activeCart.find(c => c.id === itemId);
+            if (existing) {
+                existing.qty += 1;
+            } else {
+                activeCart.push({ ...item, qty: 1 });
+            }
+            renderCart();
+            renderPOSMenu();
+        }
+
+        function updateQty(itemId, delta) {
+            const cartIndex = activeCart.findIndex(c => c.id === itemId);
+            if (cartIndex > -1) {
+                activeCart[cartIndex].qty += delta;
+                if (activeCart[cartIndex].qty <= 0) {
+                    activeCart.splice(cartIndex, 1);
+                }
+            }
+            renderCart();
+            renderPOSMenu();
+        }
+
+        function clearCart() {
+            activeCart = [];
+            document.getElementById('cash-received-input').value = '';
+            calculateCashBalance();
+            renderCart();
+            renderPOSMenu();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items-container');
+            container.innerHTML = '';
+            let totalAmount = 0;
+            let totalCount = 0;
+
+            if (activeCart.length === 0) {
+                container.innerHTML = `
+                    <div class="h-32 flex flex-col items-center justify-center text-slate-300">
+                        <i class="fa-solid fa-utensils text-3xl mb-1"></i>
+                        <p class="text-xs font-medium">No items in active order</p>
+                    </div>
+                `;
+            } else {
+                activeCart.forEach(cartItem => {
+                    const itemTotal = cartItem.price * cartItem.qty;
+                    totalAmount += itemTotal;
+                    totalCount += cartItem.qty;
+
+                    const row = document.createElement('div');
+                    row.className = "flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200/60";
+                    row.innerHTML = `
+                        <div class="flex-1 pr-2">
+                            <h4 class="font-bold text-sm text-slate-800">${cartItem.name}</h4>
+                            <p class="text-xs text-slate-500">₹${cartItem.price} × ${cartItem.qty}</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center bg-white rounded-lg border border-slate-200 p-0.5">
+                                <button onclick="updateQty('${cartItem.id}', -1)" class="w-6 h-6 flex items-center justify-center font-bold text-slate-600 text-xs">-</button>
+                                <span class="px-2 text-xs font-bold text-slate-800">${cartItem.qty}</span>
+                                <button onclick="updateQty('${cartItem.id}', 1)" class="w-6 h-6 flex items-center justify-center font-bold text-slate-600 text-xs">+</button>
+                            </div>
+                            <span class="font-extrabold text-slate-800 text-sm w-12 text-right">₹${itemTotal}</span>
+                        </div>
+                    `;
+                    container.appendChild(row);
+                });
+            }
+
+            document.getElementById('cart-grand-total').innerText = totalAmount;
+            document.getElementById('floating-cart-total').innerText = totalAmount;
+            document.getElementById('floating-cart-count').innerText = totalCount;
+            document.getElementById('upi-qr-amount').innerText = totalAmount;
+
+            // Generate precise UPI payment URI
+            const qrImg = document.getElementById('upi-qr-img');
+            const upiString = totalAmount > 0 
+                ? `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${totalAmount}&cu=INR&tn=HotelKaasiBill`
+                : `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&cu=INR`;
+            
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiString)}`;
+
+            calculateCashBalance();
+        }
+
+        // CASH BALANCE CALCULATOR
+        function calculateCashBalance() {
+            const grandTotal = parseFloat(document.getElementById('cart-grand-total').innerText) || 0;
+            const balanceDisplay = document.getElementById('cash-balance-display');
+
+            if (selectedPaymentMode === 'UPI') {
+                balanceDisplay.innerText = '₹0';
+                balanceDisplay.className = "font-black text-lg text-emerald-600";
+                return 0;
+            }
+
+            const cashInput = document.getElementById('cash-received-input').value;
+            const cashReceived = parseFloat(cashInput) || 0;
+
+            if (cashInput === '' || isNaN(cashReceived)) {
+                balanceDisplay.innerText = '₹0';
+                balanceDisplay.className = "font-black text-lg text-slate-700";
+                return 0;
+            }
+
+            const changeToReturn = cashReceived - grandTotal;
+            if (changeToReturn >= 0) {
+                balanceDisplay.innerText = `₹${changeToReturn}`;
+                balanceDisplay.className = "font-black text-lg text-emerald-600";
+            } else {
+                balanceDisplay.innerText = `Due: ₹${Math.abs(changeToReturn)}`;
+                balanceDisplay.className = "font-black text-lg text-rose-600";
+            }
+            return changeToReturn;
+        }
+
+        function completeOrder() {
+            if (activeCart.length === 0) {
+                showModal('Cart Empty', 'Please add items to the cart before completing order.', 'info');
+                return;
+            }
+
+            const totalAmount = activeCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            const totalItemsCount = activeCart.reduce((sum, item) => sum + item.qty, 0);
+
+            let cashReceived = totalAmount;
+            let changeReturned = 0;
+
+            if (selectedPaymentMode === 'CASH') {
+                const cashInput = document.getElementById('cash-received-input').value;
+                cashReceived = parseFloat(cashInput) || totalAmount;
+                changeReturned = cashReceived - totalAmount;
+                if (changeReturned < 0) {
+                    showModal('Payment Insufficient', `Received amount (₹${cashReceived}) is less than Bill Total (₹${totalAmount}).`, 'alert');
+                    return;
+                }
+            }
+
+            // Generate sequential bill number
+            let nextBillNumber = 1;
+            if (salesLog.length > 0) {
+                const existingNums = salesLog
+                    .map(o => parseInt(o.orderId))
+                    .filter(n => !isNaN(n));
+                if (existingNums.length > 0) {
+                    nextBillNumber = Math.max(...existingNums) + 1;
+                } else {
+                    nextBillNumber = salesLog.length + 1;
+                }
+            }
+
+            const orderRecord = {
+                orderId: nextBillNumber.toString(),
+                timestamp: new Date().toLocaleString(),
+                mealCategory: activeMealCategory,
+                paymentMode: selectedPaymentMode,
+                upiId: selectedPaymentMode === 'UPI' ? UPI_ID : null,
+                payeeName: selectedPaymentMode === 'UPI' ? UPI_NAME : null,
+                items: [...activeCart],
+                totalItems: totalItemsCount,
+                grandTotal: totalAmount,
+                cashReceived: selectedPaymentMode === 'CASH' ? cashReceived : totalAmount,
+                changeReturned: selectedPaymentMode === 'CASH' ? (changeReturned >= 0 ? changeReturned : 0) : 0
+            };
+
+            salesLog.unshift(orderRecord);
+            storageSet('kaasi_sales', JSON.stringify(salesLog));
+
+            const msg = selectedPaymentMode === 'CASH'
+                ? `Order #${orderRecord.orderId} Completed successfully!\n\n• Payment Mode: CASH\n• Bill Total: ₹${totalAmount}\n• Cash Received: ₹${cashReceived}\n• Balance Returned: ₹${orderRecord.changeReturned}`
+                : `Order #${orderRecord.orderId} Completed successfully!\n\n• Payment Mode: UPI Digital QR\n• Bill Total: ₹${totalAmount}\n• Payee Name: ${UPI_NAME}\n• UPI ID: ${UPI_ID}`;
+
+            showModal('Order Saved!', msg, 'success', () => {
+                showConfirmModal('Print Receipt?', 'Would you like to print the receipt for this order now?', () => {
+                    printSingleBill(orderRecord.orderId);
+                });
+                clearCart();
+                renderSummaryView();
+            });
+        }
+
+        // SUMMARY & ITEMIZED MEAL BREAKDOWN LOGIC
+        function renderSummaryView() {
+            let totalRevenue = 0;
+            let cashRevenue = 0;
+            let upiRevenue = 0;
+            let totalOrders = salesLog.length;
+
+            let itemizedSales = { Breakfast: {}, Lunch: {}, Dinner: {} };
+            let mealTotals = { Breakfast: 0, Lunch: 0, Dinner: 0 };
+
+            salesLog.forEach(order => {
+                const amount = order.grandTotal || 0;
+                totalRevenue += amount;
+                
+                const mode = order.paymentMode || 'CASH';
+                if (mode === 'UPI') {
+                    upiRevenue += amount;
+                } else {
+                    cashRevenue += amount;
+                }
+
+                mealTotals[order.mealCategory] = (mealTotals[order.mealCategory] || 0) + amount;
+
+                order.items.forEach(item => {
+                    const meal = order.mealCategory;
+                    if (!itemizedSales[meal][item.name]) {
+                        itemizedSales[meal][item.name] = { qty: 0, total: 0 };
+                    }
+                    itemizedSales[meal][item.name].qty += item.qty;
+                    itemizedSales[meal][item.name].total += (item.price * item.qty);
+                });
+            });
+
+            document.getElementById('summary-total-revenue').innerText = totalRevenue;
+            document.getElementById('summary-cash-revenue').innerText = cashRevenue;
+            document.getElementById('summary-upi-revenue').innerText = upiRevenue;
+            document.getElementById('summary-total-orders').innerText = totalOrders;
+
+            document.getElementById('bf-total-rev').innerText = mealTotals.Breakfast;
+            document.getElementById('lunch-total-rev').innerText = mealTotals.Lunch;
+            document.getElementById('dinner-total-rev').innerText = mealTotals.Dinner;
+
+            renderItemizedTable('bf-itemized-tbody', itemizedSales.Breakfast);
+            renderItemizedTable('lunch-itemized-tbody', itemizedSales.Lunch);
+            renderItemizedTable('dinner-itemized-tbody', itemizedSales.Dinner);
+
+            const tbody = document.getElementById('sales-log-table-body');
+            tbody.innerHTML = '';
+
+            if (salesLog.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-400">No sales history found.</td></tr>`;
+                return;
+            }
+
+            salesLog.forEach(log => {
+                const itemsSummary = log.items.map(i => `${i.name} (${i.qty})`).join(', ');
+                const mode = log.paymentMode || 'CASH';
+                const modeBadge = mode === 'UPI' 
+                    ? `<span class="px-2 py-0.5 rounded-full text-xs font-black bg-indigo-100 text-indigo-700 border border-indigo-200"><i class="fa-solid fa-qrcode text-[10px]"></i> UPI</span>`
+                    : `<span class="px-2 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fa-solid fa-money-bill-wave text-[10px]"></i> CASH</span>`;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-bold text-slate-800">#${log.orderId}<div class="text-xs font-normal text-slate-400">${log.timestamp}</div></td>
+                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700">${log.mealCategory}</span></td>
+                    <td class="py-3 px-4">${modeBadge}</td>
+                    <td class="py-3 px-4 text-xs text-slate-600 max-w-xs truncate">${itemsSummary}</td>
+                    <td class="py-3 px-4 text-right font-medium">₹${log.cashReceived || log.grandTotal}</td>
+                    <td class="py-3 px-4 text-right font-medium text-amber-600">₹${log.changeReturned || 0}</td>
+                    <td class="py-3 px-4 text-right font-extrabold text-emerald-600">₹${log.grandTotal}</td>
+                    <td class="py-3 px-4 text-center">
+                        <button onclick="printSingleBill('${log.orderId}')" 
+                            title="Print receipt for this bill total"
+                            class="px-2.5 py-1.5 bg-kaasi-600 hover:bg-kaasi-700 text-white rounded-lg text-xs font-bold shadow transition flex items-center gap-1 mx-auto">
+                            <i class="fa-solid fa-print"></i> Print
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderItemizedTable(tbodyId, data) {
+            const tbody = document.getElementById(tbodyId);
+            tbody.innerHTML = '';
+            const keys = Object.keys(data);
+            if (keys.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="py-4 text-center text-xs text-slate-400">No items sold yet</td></tr>`;
+                return;
+            }
+            keys.forEach(itemName => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="py-2.5 font-semibold text-slate-800">${itemName}</td>
+                    <td class="py-2.5 text-center font-bold text-indigo-600">${data[itemName].qty}</td>
+                    <td class="py-2.5 text-right font-bold text-emerald-600">₹${data[itemName].total}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // PRINT RECEIPT & LOG FUNCTIONS
+        function printSingleBill(orderId) {
+            const order = salesLog.find(o => o.orderId === orderId);
+            if (!order) {
+                showModal('Order Not Found', 'Could not locate order details for printing.', 'alert');
+                return;
+            }
+
+            const printContainer = document.getElementById('printable-container');
+            
+            let itemsHtml = '';
+            order.items.forEach(item => {
+                itemsHtml += `
+                    <tr>
+                        <td style="padding: 4px 0; font-size: 13px;">${item.name} x ${item.qty}</td>
+                        <td style="padding: 4px 0; text-align: right; font-size: 13px; font-weight: bold;">₹${item.price * item.qty}</td>
+                    </tr>
+                `;
+            });
+
+            printContainer.innerHTML = `
+                <div style="max-width: 300px; margin: 0 auto; padding: 15px; border: 1px dashed #ccc;">
+                    <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
+                        <h2 style="font-size: 20px; font-weight: 900; margin: 0;">HOTEL KAASI</h2>
+                        <p style="font-size: 11px; margin: 2px 0 0 0;">Digital POS & Restaurant Management</p>
+                        <p style="font-size: 11px; margin: 2px 0 0 0;">Date: ${order.timestamp}</p>
+                        <p style="font-size: 14px; font-weight: 900; margin: 4px 0 0 0;">Bill No: #${order.orderId}</p>
+                    </div>
+
+                    <div style="margin-bottom: 10px;">
+                        <span style="font-size: 12px; font-weight: bold;">Meal Session: ${order.mealCategory}</span><br>
+                        <span style="font-size: 12px; font-weight: bold;">Payment Mode: ${order.paymentMode}</span>
+                    </div>
+
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px; border-bottom: 1px dashed #000;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid #000; text-align: left; font-size: 11px;">
+                                <th style="padding-bottom: 4px;">Item & Qty</th>
+                                <th style="padding-bottom: 4px; text-align: right;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${itemsHtml}
+                        </tbody>
+                    </table>
+
+                    <div style="margin-bottom: 10px; font-size: 13px;">
+                        <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 15px;">
+                            <span>BILL TOTAL:</span>
+                            <span>₹${order.grandTotal}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 3px;">
+                            <span>Paid (${order.paymentMode}):</span>
+                            <span>₹${order.cashReceived || order.grandTotal}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 2px;">
+                            <span>Change Returned:</span>
+                            <span>₹${order.changeReturned || 0}</span>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; border-top: 2px dashed #000; padding-top: 10px; margin-top: 10px; font-size: 12px;">
+                        <p style="margin: 0; font-weight: bold;">Thank You! Visit Again!</p>
+                        <p style="margin: 4px 0 0 0; font-size: 10px;">*** Hotel Kaasi POS ***</p>
+                    </div>
+                </div>
+            `;
+
+            printContainer.classList.remove('hidden');
+            printContainer.style.display = 'block';
+            const finishPrint = () => {
+                printContainer.classList.add('hidden');
+                printContainer.style.display = 'none';
+                window.removeEventListener('afterprint', finishPrint);
+            };
+            window.addEventListener('afterprint', finishPrint, { once: true });
+            // Safari may not consistently fire afterprint; retain the content briefly.
+            window.setTimeout(finishPrint, 30000);
+            window.print();
+        }
+
+        function printAllSalesLog() {
+            if (salesLog.length === 0) {
+                showModal('Print Failed', 'No sales history available to print.', 'info');
+                return;
+            }
+
+            const printContainer = document.getElementById('printable-container');
+            let rowsHtml = '';
+            let grandTotalRev = 0;
+
+            salesLog.forEach((log, index) => {
+                const itemsSummary = log.items.map(i => `${i.name} (${i.qty})`).join(', ');
+                grandTotalRev += (log.grandTotal || 0);
+
+                rowsHtml += `
+                    <tr style="border-bottom: 1px solid #eee; font-size: 11px;">
+                        <td style="padding: 6px 4px;">${index + 1}</td>
+                        <td style="padding: 6px 4px; font-weight: bold;">#${log.orderId}<br><span style="font-size:9px; color:#555;">${log.timestamp}</span></td>
+                        <td style="padding: 6px 4px;">${log.mealCategory}</td>
+                        <td style="padding: 6px 4px; font-weight: bold;">${log.paymentMode}</td>
+                        <td style="padding: 6px 4px;">${itemsSummary}</td>
+                        <td style="padding: 6px 4px; text-align: right;">₹${log.cashReceived || log.grandTotal}</td>
+                        <td style="padding: 6px 4px; text-align: right;">₹${log.changeReturned || 0}</td>
+                        <td style="padding: 6px 4px; text-align: right; font-weight: bold;">₹${log.grandTotal}</td>
+                    </tr>
+                `;
+            });
+
+            printContainer.innerHTML = `
+                <div style="padding: 20px;">
+                    <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
+                        <h1 style="font-size: 22px; font-weight: 900; margin: 0;">HOTEL KAASI - FULL SALES LOG REPORT</h1>
+                        <p style="font-size: 12px; margin: 4px 0 0 0;">Generated on: ${new Date().toLocaleString()}</p>
+                    </div>
+
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; margin-bottom: 20px;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #000; font-size: 11px; text-transform: uppercase; background-color: #f5f5f5;">
+                                <th style="padding: 6px 4px;">#</th>
+                                <th style="padding: 6px 4px;">Order ID & Date</th>
+                                <th style="padding: 6px 4px;">Meal</th>
+                                <th style="padding: 6px 4px;">Mode</th>
+                                <th style="padding: 6px 4px;">Items</th>
+                                <th style="padding: 6px 4px; text-align: right;">Paid</th>
+                                <th style="padding: 6px 4px; text-align: right;">Change</th>
+                                <th style="padding: 6px 4px; text-align: right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+
+                    <div style="border-top: 2px solid #000; padding-top: 10px; text-align: right; font-size: 16px; font-weight: 900;">
+                        <span>TOTAL REVENUE (${salesLog.length} Orders): ₹${grandTotalRev}</span>
+                    </div>
+                </div>
+            `;
+
+            printContainer.classList.remove('hidden');
+            printContainer.style.display = 'block';
+            const finishPrint = () => {
+                printContainer.classList.add('hidden');
+                printContainer.style.display = 'none';
+                window.removeEventListener('afterprint', finishPrint);
+            };
+            window.addEventListener('afterprint', finishPrint, { once: true });
+            // Safari may not consistently fire afterprint; retain the content briefly.
+            window.setTimeout(finishPrint, 30000);
+            window.print();
+        }
+
+        // EXCEL / CSV EXPORT FUNCTION
+        function exportToExcel() {
+            if (salesLog.length === 0) {
+                showModal('Export Failed', 'No sales data available to export.', 'info');
+                return;
+            }
+
+            let csvContent = "\uFEFFHOTEL KAASI - OVERALL SALES REPORT\r\n\r\n";
+
+            csvContent += "ORDER LOGS\n";
+            csvContent += "Order ID,Date & Time,Meal Session,Payment Mode,UPI ID,Payee Name,Items Summary,Total Items Count,Amount Paid,Balance Returned,Grand Total (INR)\n";
+            salesLog.forEach(log => {
+                const itemsStr = '"' + log.items.map(i => `${i.name} x${i.qty}`).join('; ') + '"';
+                const mode = log.paymentMode || 'CASH';
+                const uId = mode === 'UPI' ? UPI_ID : '';
+                const pName = mode === 'UPI' ? UPI_NAME : '';
+                csvContent += `${log.orderId},${log.timestamp},${log.mealCategory},${mode},${uId},${pName},${itemsStr},${log.totalItems},${log.cashReceived || log.grandTotal},${log.changeReturned || 0},${log.grandTotal}\n`;
+            });
+
+            csvContent += "\nITEMIZED SALES BREAKDOWN BY MEAL\n";
+            csvContent += "Meal Session,Item Name,Quantity Sold,Total Revenue (INR)\n";
+
+            let itemizedSales = { Breakfast: {}, Lunch: {}, Dinner: {} };
+            salesLog.forEach(order => {
+                order.items.forEach(item => {
+                    const meal = order.mealCategory;
+                    if (!itemizedSales[meal][item.name]) itemizedSales[meal][item.name] = { qty: 0, total: 0 };
+                    itemizedSales[meal][item.name].qty += item.qty;
+                    itemizedSales[meal][item.name].total += (item.price * item.qty);
+                });
+            });
+
+            ['Breakfast', 'Lunch', 'Dinner'].forEach(meal => {
+                Object.keys(itemizedSales[meal]).forEach(itemName => {
+                    csvContent += `${meal},${itemName},${itemizedSales[meal][itemName].qty},${itemizedSales[meal][itemName].total}\n`;
+                });
+            });
+
+            const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const objectUrl = URL.createObjectURL(csvBlob);
+            const link = document.createElement('a');
+            link.href = objectUrl;
+            link.download = `Hotel_Kaasi_Sales_Report_${new Date().toISOString().slice(0,10)}.csv`;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            // Delay revocation so iOS Safari has time to start the download.
+            window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+        }
+
+        function clearSalesLog() {
+            showConfirmModal('Clear All History?', 'Are you sure you want to erase all saved order logs and sales reports? This action cannot be undone.', () => {
+                salesLog = [];
+                storageSet('kaasi_sales', JSON.stringify(salesLog));
+                renderSummaryView();
+            });
+        }
+
+        // EDIT MENU MANAGEMENT LOGIC
+        function renderMenuManagerTable() {
+            const tbody = document.getElementById('menu-manager-table-body');
+            tbody.innerHTML = '';
+            menuItems.forEach((item) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-bold text-slate-800">${item.meal}</td>
+                    <td class="py-3 px-4 font-semibold text-slate-700">${item.name}</td>
+                    <td class="py-3 px-4 font-extrabold text-emerald-600">₹${item.price}</td>
+                    <td class="py-3 px-4 text-right space-x-1">
+                        <button onclick="editMenuItem('${item.id}')" class="px-2.5 py-1.5 bg-amber-100 text-amber-800 rounded-lg text-xs font-bold hover:bg-amber-200 transition">Edit</button>
+                        <button onclick="deleteMenuItem('${item.id}')" class="px-2.5 py-1.5 bg-rose-100 text-rose-800 rounded-lg text-xs font-bold hover:bg-rose-200 transition">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function handleSaveMenuItem(e) {
+            e.preventDefault();
+            const editId = document.getElementById('edit-item-id').value;
+            const category = document.getElementById('form-category').value;
+            const name = document.getElementById('form-name').value.trim();
+            const price = parseFloat(document.getElementById('form-price').value);
+            const desc = document.getElementById('form-desc').value.trim();
+
+            if (editId) {
+                const idx = menuItems.findIndex(m => m.id === editId);
+                if (idx > -1) menuItems[idx] = { id: editId, meal: category, name, price, desc };
+            } else {
+                menuItems.push({ id: Date.now().toString(), meal: category, name, price, desc });
+            }
+
+            storageSet('kaasi_menu_v2', JSON.stringify(menuItems));
+            resetForm();
+            renderMenuManagerTable();
+            renderPOSMenu();
+            showModal('Menu Updated', 'Menu item saved successfully!', 'success');
+        }
+
+        function deleteMenuItem(id) {
+            showConfirmModal('Delete Item?', 'Are you sure you want to remove this item from the menu?', () => {
+                menuItems = menuItems.filter(m => m.id !== id);
+                storageSet('kaasi_menu_v2', JSON.stringify(menuItems));
+                renderMenuManagerTable();
+                renderPOSMenu();
+            });
+        }
+
+        function restoreDefaultMenu() {
+            showConfirmModal('Reset Menu?', 'Restore standard default Hotel Kaasi menu items?', () => {
+                menuItems = [...DEFAULT_MENU];
+                storageSet('kaasi_menu_v2', JSON.stringify(menuItems));
+                renderMenuManagerTable();
+                renderPOSMenu();
+            });
+        }
+
+        function resetForm() {
+            document.getElementById('edit-item-id').value = '';
+            document.getElementById('menu-item-form').reset();
+            document.getElementById('form-title').innerText = 'Add New Menu Item';
+        }
+
+        // CUSTOM MODAL DIALOG CONTROLLER
+        function showModal(title, message, type = 'info', onOk = null) {
+            const modal = document.getElementById('custom-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            const iconBg = document.getElementById('modal-icon-bg');
+            const icon = document.getElementById('modal-icon');
+            const actions = document.getElementById('modal-actions');
+
+            modalTitle.innerText = title;
+            modalBody.innerText = message;
+
+            if (type === 'success') {
+                iconBg.className = "w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-xl";
+                icon.className = "fa-solid fa-circle-check";
+            } else if (type === 'alert') {
+                iconBg.className = "w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-xl";
+                icon.className = "fa-solid fa-triangle-exclamation";
+            } else {
+                iconBg.className = "w-10 h-10 rounded-xl bg-amber-100 text-kaasi-600 flex items-center justify-center font-bold text-xl";
+                icon.className = "fa-solid fa-circle-info";
+            }
+
+            actions.innerHTML = `
+                <button id="modal-ok-btn" class="px-5 py-2.5 bg-kaasi-600 hover:bg-kaasi-700 text-white font-bold rounded-xl text-xs transition">
+                    OK
+                </button>
+            `;
+
+            document.getElementById('modal-ok-btn').onclick = () => {
+                modal.classList.add('hidden');
+                if (onOk) onOk();
+            };
+
+            modal.classList.remove('hidden');
+        }
+
+        function showConfirmModal(title, message, onConfirm) {
+            const modal = document.getElementById('custom-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            const iconBg = document.getElementById('modal-icon-bg');
+            const icon = document.getElementById('modal-icon');
+            const actions = document.getElementById('modal-actions');
+
+            modalTitle.innerText = title;
+            modalBody.innerText = message;
+
+            iconBg.className = "w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-xl";
+            icon.className = "fa-solid fa-trash-can";
+
+            actions.innerHTML = `
+                <button id="modal-cancel-btn" class="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs transition">
+                    Cancel
+                </button>
+                <button id="modal-confirm-btn" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition">
+                    Confirm
+                </button>
+            `;
+
+            document.getElementById('modal-cancel-btn').onclick = () => {
+                modal.classList.add('hidden');
+            };
+
+            document.getElementById('modal-confirm-btn').onclick = () => {
+                modal.classList.add('hidden');
+                if (onConfirm) onConfirm();
+            };
+
+            modal.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
